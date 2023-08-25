@@ -1,6 +1,7 @@
 using EMK.BankApp.Web.Data.Context;
 using EMK.BankApp.Web.Data.Interfaces;
 using EMK.BankApp.Web.Data.Repository;
+using EMK.BankApp.Web.Data.UnitOfWork;
 using EMK.BankApp.Web.Mapping;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,10 +28,12 @@ namespace EMK.BankApp.Web
             {
                 opt.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=BankAppD;Trusted_Connection=true;TrustServerCertificate=true");
             });
-            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
+            //services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            //services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
+            //services.AddScoped<IAccountRepository, AccountRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IApplicationUserMapping, ApplicationUserMapping>();
-            services.AddScoped<IAccountRepository, AccountRepository>();
+            
             services.AddScoped<IAccountMapping, AccountMapping>();
             services.AddControllersWithViews();
         }

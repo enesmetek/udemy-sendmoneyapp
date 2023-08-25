@@ -5,6 +5,7 @@ using EMK.BankApp.Web.Data.Repository;
 using EMK.BankApp.Web.Mapping;
 using EMK.BankApp.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -27,18 +28,27 @@ namespace EMK.BankApp.Web.Controllers
         //    _accountMapping = accountMapping;
         //}
 
-        private readonly IGenericRepository<Account> _accountRepository;
-        private readonly IGenericRepository<ApplicationUser> _userRepository;
+        //private readonly igenericrepository<account> _accountrepository;
+        //private readonly igenericrepository<applicationuser> _userrepository;
 
-        public AccountController(IGenericRepository<Account> accountRepository, IGenericRepository<ApplicationUser> userRepository)
+        //public accountcontroller(igenericrepository<account> accountrepository, igenericrepository<applicationuser> userrepository)
+        //{
+        //    _accountrepository = accountrepository;
+        //    _userrepository = userrepository;
+        //}
+
+        private readonly IUnitOfWork _unitOfWork;
+
+        public AccountController(IUnitOfWork unitOfWork)
         {
-            _accountRepository = accountRepository;
-            _userRepository = userRepository;
+            _unitOfWork = unitOfWork;
         }
+
+
 
         public IActionResult Create(int id)
         {
-            var userInfo = _userRepository.GetByID(id);
+            var userInfo = _unitOfWork.GetRepository<ApplicationUser>().GetByID(id);
             return View(new UserListModel
             {
                 ID = userInfo.ID, 
@@ -50,23 +60,23 @@ namespace EMK.BankApp.Web.Controllers
         [HttpPost]
         public IActionResult Create(AccountCreateModel model) 
         {
-            _accountRepository.Create(new Account
+           _unitOfWork.GetRepository<Account>().Create(new Account
             {
                 AccountNumber = model.AccountNumber,
                 Balance = model.Balance,
                 ApplicationUserID = model.ApplicationUserID,
             });        
-           
+           _unitOfWork.SaveChanges();
             return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]
         public IActionResult GetByUserId(int userID)
         {
-            var query = _accountRepository.GetQueryable();
+            var query = _unitOfWork.GetRepository<Account>().GetQueryable();
             var accounts = query.Where(x => x.ApplicationUserID == userID).ToList();
 
-            var user = _userRepository.GetByID(userID);
+            var user = _unitOfWork.GetRepository<ApplicationUser>().GetByID(userID);
 
             var list = new List<AccountListModel>();
 
@@ -89,7 +99,7 @@ namespace EMK.BankApp.Web.Controllers
         [HttpGet]
         public IActionResult SendMoney(int accountID)
         {
-            var query = _accountRepository.GetQueryable();
+            var query = _unitOfWork.GetRepository<Account>().GetQueryable();
             var accounts = query.Where(x => x.ID != accountID).ToList();
             var list = new List<AccountListModel>();
 
@@ -104,9 +114,25 @@ namespace EMK.BankApp.Web.Controllers
                     ApplicationUserID = account.ApplicationUserID,
                     ID = account.ID,
                 });
-                
             }
-            return View(list);
+            return View(new SelectList(list,"ID","AccountNumber"));
+        }
+
+        [HttpPost]
+        public IActionResult SendMoney(SendMoneyModel model)
+        {
+            var senderAccount = _unitOfWork.GetRepository<Account>().GetByID(model.SenderID);
+
+            senderAccount.Balance -= model.Amount;
+            _unitOfWork.GetRepository<Account>().Update(senderAccount);
+
+            var account = _unitOfWork.GetRepository<Account>().GetByID(model.AccountID);
+            account.Balance += model.Amount;
+            _unitOfWork.GetRepository<Account>().Update(account);
+
+            _unitOfWork.SaveChanges();
+
+            return RedirectToAction("Index", "Home");
         }
     }
 }

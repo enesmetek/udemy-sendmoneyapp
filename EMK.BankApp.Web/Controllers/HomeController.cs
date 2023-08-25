@@ -12,20 +12,28 @@ namespace EMK.BankApp.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly BankContext _context;
-        private readonly IApplicationUserRepository _userRepository;
+        //private readonly BankContext _context;
+        //private readonly IApplicationUserRepository _userRepository;
         private readonly IApplicationUserMapping _userMapping;
 
-        public HomeController(BankContext context, IApplicationUserRepository userRepository, IApplicationUserMapping userMapping)
+        //public HomeController(BankContext context, IApplicationUserRepository userRepository, IApplicationUserMapping userMapping)
+        //{
+        //    _context = context;
+        //    _userRepository = userRepository;
+        //    _userMapping = userMapping;
+        //}
+
+        private readonly IUnitOfWork _unitOfWork;
+
+        public HomeController(IApplicationUserMapping userMapping, IUnitOfWork unitOfWork)
         {
-            _context = context;
-            _userRepository = userRepository;
+            _unitOfWork = unitOfWork;
             _userMapping = userMapping;
         }
 
         public IActionResult Index()
         {
-            return View(_userMapping.MapToListOfUserList(_userRepository.GetAll()));
+            return View(_userMapping.MapToListOfUserList(_unitOfWork.GetRepository<ApplicationUser>().GetAll()));
         }
     }
 }
